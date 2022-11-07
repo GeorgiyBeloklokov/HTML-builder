@@ -5,11 +5,11 @@ const path = require('path');
 (async () => {
   try {
     const content = await readdir(path.join(__dirname, 'secret-folder'), { withFileTypes: true });
-    const files = content.filter(c => c.isFile());
-    files.forEach(async f => {
-      const filePath = path.join(path.join(__dirname, 'secret-folder'), f.name);
-      const stats = await stat(filePath);
-      const { name, ext } = path.parse(filePath);
+    const files = content.filter(item => item.isFile());
+    files.forEach(async item => {
+      const pathOfFile = path.join(path.join(__dirname, 'secret-folder'), item.name);
+      const stats = await stat(pathOfFile);
+      const { name, ext } = path.parse(pathOfFile);
       console.log(`${name} - ${ext.slice(1)} - ${stats.size}b`);
     });
   } catch (error) {
