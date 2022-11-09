@@ -2,10 +2,17 @@ const { readdir, rm } = require('node:fs/promises');
 const path = require('path');
 const fs = require('fs');
 
-async function bundleCss() {
-  fs.access(path.join(__dirname, 'project-dist', 'bundle.css'), async () => {
-    await rm(path.join(__dirname, 'project-dist', 'bundle.css'));
+const deleteDist = async () => {
+  await rm(path.resolve(__dirname, 'project-dist', 'bundle.css'), { recursive: true, force: true }, (err) => {
+    if (err) {
+      throw err
+    } else {
+      console.log('ok');
+    }
   });
+};
+
+async function bundleCss() {
   const sourceFolder = path.join(__dirname, 'styles');
   const content = await readdir(sourceFolder, { withFileTypes: true });
   const files = content.filter((item) => item.isFile());
@@ -26,4 +33,12 @@ async function bundleCss() {
     }
   });
 }
-bundleCss().catch(`Error:`, console.error);
+/* bundleCss().catch(`Error:`, console.error); */
+
+const mainFunction = async () => {
+  await deleteDist();
+  await bundleCss();
+
+  return true;
+};
+mainFunction().catch(`Error:`, console.error);
