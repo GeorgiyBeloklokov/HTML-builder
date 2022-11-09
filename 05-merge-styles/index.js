@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 const deleteDist = async () => {
-  await rm(path.resolve(__dirname, 'project-dist', 'bundle.css'), { recursive: true});
+  await rm(path.resolve(__dirname, 'project-dist', 'bundle.css'), { recursive: true, force: true });
 };
 
 async function bundleCss() {
