@@ -1,32 +1,37 @@
-const { readdir, stat, mkdir, readFile, copyFile } = require('fs/promises');
+const { readdir, stat, mkdir, readFile, copyFile, rm, rmdir } = require('fs/promises');
 const path = require('path');
 const fs = require('fs');
 
-(async () => {
-  try {
-    const dirCreation = await mkdir(path.join(__dirname, 'project-dist'), {
-      recursive: true,
-    });
-    const readStream = fs.createReadStream(path.join(__dirname, 'template.html'), 'utf-8');
-    const writeStream = fs.createWriteStream(path.join(__dirname, 'project-dist', 'index.html'));
+const deleteDist = async () => {
+  await rm(path.resolve(__dirname, 'project-dist'), { recursive: true, force: true });
+};
 
-    let data = '';
-    readStream.on('data', (chunk) => (data += chunk));
-    readStream.on('end', async () => {
-      const components = [...data.matchAll(/{{(.*)}}/g)];
-      for (let item of components) {
-        const pathOfFile = path.join(path.join(__dirname, 'components'), `${item[1]}.html`);
-        const content = await readFile(pathOfFile);
-        data = data.replace(item[0], content);
-      }
-      writeStream.write(data);
-    });
-    return dirCreation;
-  } catch (error) {
-    process.stderr.write('Error: ' + error.message);
-    process.exit(1);
-  }
-})();
+let createDist = async () => {
+  await mkdir(path.join(__dirname, 'project-dist'), { recursive: true }, (err) => {
+    if (err) throw err;
+  });
+};
+
+let makeHtml = async () => {
+  const dirCreation = await mkdir(path.join(__dirname, 'project-dist'), {
+    recursive: true,
+  });
+  const readStream = fs.createReadStream(path.join(__dirname, 'template.html'), 'utf-8');
+  const writeStream = fs.createWriteStream(path.join(__dirname, 'project-dist', 'index.html'));
+
+  let data = '';
+  readStream.on('data', (chunk) => (data += chunk));
+  readStream.on('end', async () => {
+    const components = [...data.matchAll(/{{(.*)}}/g)];
+    for (let item of components) {
+      const pathOfFile = path.join(path.join(__dirname, 'components'), `${item[1]}.html`);
+      const content = await readFile(pathOfFile);
+      data = data.replace(item[0], content);
+    }
+    writeStream.write(data);
+  });
+  return dirCreation;
+};
 
 async function bundleCss() {
   const sourceFolder = path.join(__dirname, 'styles');
@@ -47,7 +52,6 @@ async function bundleCss() {
     }
   });
 }
-bundleCss().catch(`Error:`, console.error);
 
 async function copyDir(src, dest) {
   await mkdir(dest, { recursive: true });
@@ -61,4 +65,14 @@ async function copyDir(src, dest) {
     else await copyDir(sourceFile, destFile);
   });
 }
-copyDir(path.join(__dirname, 'assets'), path.join(__dirname, 'project-dist', 'assets')).catch(`Error:`, console.error);
+
+const mainFunction = async () => {
+  await deleteDist();
+  await createDist();
+  await makeHtml();
+  await bundleCss();
+  await copyDir(path.join(__dirname, 'assets'), path.join(__dirname, 'project-dist', 'assets'));
+
+  return true;
+};
+mainFunction().catch(`Error:`, console.error);
